@@ -227,6 +227,52 @@ fn _longest_flight_route() {
 	counter += 1;
     }
     // XXX: Now just do DP for finding the longest path via DFS
+    let mut vis : Vec<bool> = vec![false; n];
+    let mut paths : Vec<Vec<usize>> = vec![vec![]; n];
+
+    fn _get_path(i : usize, vis: &mut Vec<bool>, paths: &mut Vec<Vec<usize>>,
+		 adj: &Vec<Vec<usize>>, dest: usize) {
+
+	vis[i] = true;
+	// XXX: The base case -- this is the destination
+	if i == dest {
+	    paths[i].push(dest);
+	    return;
+	}
+	// XXX: Recursive case
+	for c in adj[i].iter() {
+	    if !vis[*c] {
+		_get_path(*c, vis, paths, adj, dest);
+	    }
+	}
+	// XXX: Get the max path from all the children paths
+	let mut mm = 0usize;
+	let mut cmi = -1i64;
+	for c in adj[i].iter() {
+	    (cmi, mm) = if paths[*c].len() > mm {(*c as i64, paths[*c].len())}
+	    else {(cmi, mm)};
+	}
+	// XXX: Add your path XXX: copy the longest path to yourself
+	// from cmi -- this can be made much better -- just hold pointer
+	// (int) to next node in longest path!
+	if cmi != -1 {
+	    paths[i].push(i);
+	    let tt = paths[cmi as usize].clone();
+	    paths[i].extend(tt);
+	}
+    }
+
+    // XXX: Call dp for all node if they are already not visited
+    for i in 0..n {
+	if !vis[i]{
+	    _get_path(i, &mut vis, &mut paths, &adj, n-1);
+	}
+    }
+    println!("{}", paths[0].len());
+    for i in paths[0].iter(){
+	print!("{} ", i);
+    }
+    println!();
 }
 
 fn main() {
