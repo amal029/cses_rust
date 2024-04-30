@@ -158,8 +158,8 @@ fn _course_schedule() {
 	adj[s].push(e);
 	counter += 1;
     }
-    // XXX: Do a topological sort of the DAG, we need to make check that
-    // the graph is acyclic while traversing it.
+    // XXX: Do a topological sort of the DAG, we need to check that the
+    // graph is acyclic while traversing it.
     let mut order = vec![];
     order.reserve(n);
     let mut vis = vec![false; n];
@@ -270,7 +270,7 @@ fn _longest_flight_route() {
     }
     println!("{}", paths[0].len());
     for i in paths[0].iter(){
-	print!("{} ", i);
+	print!("{} ", i+1);
     }
     println!();
 }
