@@ -164,7 +164,7 @@ fn _course_schedule() {
     order.reserve(n);
     // XXX: Note that piece of junk that is rust does not do
     // vector<bool> optimisation like C++! it allocates byte for each
-    // bool -- 7 wasted bytes/bool! However, for now I am just going to
+    // bool -- 7 wasted bits/bool! However, for now I am just going to
     // use vector<bool> for memoization.
     let mut vis = vec![false; n];
     fn top_sort(adj: &Vec<Vec<usize>>, order: &mut Vec<usize>,
@@ -232,7 +232,7 @@ fn _longest_flight_route() {
     }
     // XXX: Note that piece of junk that is rust does not do
     // vector<bool> optimisation like C++! it allocates byte for each
-    // bool -- 7 wasted bytes/bool! However, for now I am just going to
+    // bool -- 7 wasted bits/bool! However, for now I am just going to
     // use vector<bool> for memoization.
     let mut vis : Vec<bool> = vec![false; n];
     let mut paths : Vec<Vec<usize>> = vec![vec![]; n];
