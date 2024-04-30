@@ -162,6 +162,10 @@ fn _course_schedule() {
     // graph is acyclic while traversing it.
     let mut order = vec![];
     order.reserve(n);
+    // XXX: Note that piece of junk that is rust does not do
+    // vector<bool> optimisation like C++! it allocates byte for each
+    // bool -- 7 wasted bytes/bool! However, for now I am just going to
+    // use vector<bool> for memoization.
     let mut vis = vec![false; n];
     fn top_sort(adj: &Vec<Vec<usize>>, order: &mut Vec<usize>,
 		vis : &mut Vec<bool>, i: usize) -> bool {
@@ -226,10 +230,14 @@ fn _longest_flight_route() {
 	adj[s].push(e);
 	counter += 1;
     }
-    // XXX: Now just do DP for finding the longest path via DFS
+    // XXX: Note that piece of junk that is rust does not do
+    // vector<bool> optimisation like C++! it allocates byte for each
+    // bool -- 7 wasted bytes/bool! However, for now I am just going to
+    // use vector<bool> for memoization.
     let mut vis : Vec<bool> = vec![false; n];
     let mut paths : Vec<Vec<usize>> = vec![vec![]; n];
 
+    // XXX: Now just do DP for finding the longest path via DFS
     fn _get_path(i : usize, vis: &mut Vec<bool>, paths: &mut Vec<Vec<usize>>,
 		 adj: &Vec<Vec<usize>>, dest: usize) {
 
