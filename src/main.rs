@@ -453,13 +453,11 @@ fn _road_reparation() {
 
 fn _kosaraju(adj: &Vec<Vec<usize>>, s: usize, vis: &mut Vec<bool>, paths: &mut Vec<usize>) {
     vis[s] = true;
-
     for c in adj[s].iter() {
         if !vis[*c] {
             _kosaraju(adj, *c, vis, paths);
         }
     }
-    // println!("pathss len: {}", paths.len());
     // XXX: Now add yourself to the paths -- top sorted already
     paths.push(s);
 }
@@ -495,8 +493,51 @@ fn _flight_routes_check() {
     // reach some destination.
     if sccs.len() > 1 {
         println!("NO");
-        println!("{} {}", sccs[0][0]+1, sccs[1][0]+1);
+        println!("{} {}", sccs[0][0] + 1, sccs[1][0] + 1);
     }
+}
+
+fn _teleporters_path() {
+    let ss = _read::<usize>();
+    let mut degs: Vec<usize> = vec![0; ss[0]];
+    let mut adj: Vec<Vec<(usize, bool)>> = vec![vec![]; ss[0]];
+    for _ in 0..ss[1] {
+        let u = _read::<usize>();
+        // XXX: true here means that the edge is still connected
+        adj[u[0] - 1].push((u[1] - 1, true));
+        degs[u[0] - 1] += 1;
+        degs[u[1] - 1] += 1;
+    }
+    if !degs.iter().all(|&x| x % 2 == 0) {
+        if degs.iter().filter(|&x| x % 2 != 0).count() != 2 {
+            println!("IMPOSSIBLE");
+            return;
+        }
+    }
+    // XXX: Now just do Eulerian path
+    let mut q = vec![0];
+    let mut path = Vec::with_capacity(ss[0]);
+    // XXX: BFS search for eulerain path
+    while !q.is_empty() {
+        let hh = q.len() - 1;
+        if degs[q[hh]] == 0 {
+            path.push(q.pop());
+        } else {
+            for (c, b) in adj[q[hh]].iter_mut() {
+                if *b {
+                    *b = false;
+                    degs[q[hh]] -= 1;
+                    degs[*c] -= 1;
+                    q.push(*c);
+                    break;
+                }
+            }
+        }
+    }
+    for c in path.iter().rev() {
+        print!("{} ", c.unwrap()+1);
+    }
+    println!();
 }
 
 fn main() {
@@ -511,5 +552,6 @@ fn main() {
     // _planets_qs1(); //just reachability
     // _game_routes(); //just dp for number of paths to destination
     // _road_reparation(); // kruskal' algo for minimum spanning tree
-    _flight_routes_check(); // strongly connected components, Kosaraju' alog
+    // _flight_routes_check(); // strongly connected components, Kosaraju' alog
+    // _teleporters_path(); //eulerian path
 }
