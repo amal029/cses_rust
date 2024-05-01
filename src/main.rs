@@ -6,7 +6,7 @@ use std::collections::BinaryHeap;
 use std::process::exit;
 
 // XXX: Just made a generic reader for all problems
-fn read<T>() -> Vec<T>
+fn _read<T>() -> Vec<T>
 where
     T: std::str::FromStr,
 {
@@ -378,12 +378,12 @@ fn _planets_qs1() {
 }
 
 fn _game_routes() {
-    let nums = read::<usize>();
+    let nums = _read::<usize>();
     let vs = nums[0];
     let es = nums[1];
     let mut adj: Vec<Vec<usize>> = vec![vec![]; vs];
     for _ in 0..es {
-        let ss = read::<usize>();
+        let ss = _read::<usize>();
         adj[ss[0] - 1].push(ss[1] - 1);
     }
     // XXX: Now just do dp to find the total number of paths from source
@@ -405,12 +405,12 @@ fn _game_routes() {
 }
 
 fn _road_reparation() {
-    let ss = read::<usize>();
+    let ss = _read::<usize>();
     let mut adj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
     let mut dd: Vec<bool> = vec![false; ss[0]];
     let mut pq = BinaryHeap::with_capacity(ss[1]);
     for _ in 0..ss[1] {
-        let ss = read::<usize>();
+        let ss = _read::<usize>();
         // XXX: Cost, source node, destination node -- reverse for
         // min-heap
         pq.push(Reverse((ss[2], ss[0] - 1, ss[1] - 1)));
