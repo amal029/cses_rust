@@ -462,5 +462,5 @@ fn main() {
     // _longest_flight_route(); //longest path with dynamic programming
     // _planets_qs1(); //just reachability
     // _game_routes(); //just dp for number of paths to destination
-    _road_reparation();
+    // _road_reparation(); // kruskal' algo for minimum spanning tree
 }
