@@ -451,6 +451,20 @@ fn _road_reparation() {
     }
 }
 
+fn _flight_routes_check() {
+    let ss = _read::<usize>();
+    let mut adj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
+    let mut iadj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
+    for _ in 0..ss[1] {
+        let ss = _read::<usize>();
+        // This is a DAG
+        adj[ss[0] - 1].push(ss[1] - 1);
+        // XXX: The inverted DAG
+        iadj[ss[1] - 1].push(ss[0] - 1);
+    }
+    // TODO: Just do Kosaraju' algo
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -463,4 +477,5 @@ fn main() {
     // _planets_qs1(); //just reachability
     // _game_routes(); //just dp for number of paths to destination
     // _road_reparation(); // kruskal' algo for minimum spanning tree
+    _flight_routes_check(); // strongly connected components, Kosaraju' alog
 }
