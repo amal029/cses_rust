@@ -451,6 +451,19 @@ fn _road_reparation() {
     }
 }
 
+fn _kosaraju(adj: &Vec<Vec<usize>>, s: usize, vis: &mut Vec<bool>, paths: &mut Vec<usize>) {
+    vis[s] = true;
+
+    for c in adj[s].iter() {
+        if !vis[*c] {
+            _kosaraju(adj, *c, vis, paths);
+        }
+    }
+    // println!("pathss len: {}", paths.len());
+    // XXX: Now add yourself to the paths -- top sorted already
+    paths.push(s);
+}
+
 fn _flight_routes_check() {
     let ss = _read::<usize>();
     let mut adj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
@@ -463,6 +476,27 @@ fn _flight_routes_check() {
         iadj[ss[1] - 1].push(ss[0] - 1);
     }
     // TODO: Just do Kosaraju' algo
+    let mut paths: Vec<usize> = vec![];
+    let mut vis = vec![false; ss[0]];
+    _kosaraju(&adj, 0, &mut vis, &mut paths);
+    // XXX: Now go in the opposite direction using iadj
+    vis.fill(false);
+    let mut sccs: Vec<Vec<usize>> = vec![];
+    for c in paths.iter().rev() {
+        let mut scc = vec![];
+        if !vis[*c] {
+            _kosaraju(&iadj, *c, &mut vis, &mut scc);
+        }
+        if !scc.is_empty() {
+            sccs.push(scc);
+        }
+    }
+    // XXX: Now if the length of sccs is > 1, then some flights cannot
+    // reach some destination.
+    if sccs.len() > 1 {
+        println!("NO");
+        println!("{} {}", sccs[0][0]+1, sccs[1][0]+1);
+    }
 }
 
 fn main() {
