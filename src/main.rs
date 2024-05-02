@@ -12,12 +12,10 @@ where
 {
     let mut line = String::new();
     std::io::stdin().read_line(&mut line).expect("input");
-    let nums = line
-        .trim()
+    line.trim()
         .split(' ')
         .flat_map(str::parse::<T>)
-        .collect::<Vec<_>>();
-    return nums;
+        .collect::<Vec<_>>()
 }
 
 fn _weird_algo() {
@@ -97,7 +95,7 @@ fn _building_teams() {
     let n: usize = nums[0];
     let m: usize = nums[1];
     let mut vs: Vec<Vec<usize>> = vec![vec![]; n];
-    vs.reserve(n as usize);
+    vs.reserve(n);
     let mut counter = 0;
     while counter < m {
         line.clear();
@@ -132,24 +130,22 @@ fn _building_teams() {
         } else if cc.iter().any(|&x| x == 1) {
             // println!("giving color 2");
             crs[i] = 2;
-        } else if cc.iter().any(|&x| x == 2) {
+        } else if cc.iter().any(|&x| x == 2 || x == 0) {
             // println!("giving color 1");
             crs[i] = 1;
-        } else if cc.iter().all(|&x| x == 0) {
-            // println!("giving color 1");
-            crs[i] = 1;
-        }
-        // XXX: Now do this for its neighbors.
+        } // else if cc.iter().all(|&x| x == 0) {
+          //     // println!("giving color 1");
+          //     crs[i] = 1;
+          // }
+          // XXX: Now do this for its neighbors.
         let mut dd = true;
         for c1 in vs[i].iter() {
-            if crs[*c1] == 0 {
-                if !dfs_color(*c1, vs, crs) {
-                    dd = false;
-                    break;
-                }
+            if crs[*c1] == 0 && !dfs_color(*c1, vs, crs) {
+                dd = false;
+                break;
             }
         }
-        return dd;
+        dd
     }
     // XXX: Do this for all nodes
     for nodes in 0..n {
@@ -194,8 +190,7 @@ fn _course_schedule() {
     }
     // XXX: Do a topological sort of the DAG, we need to check that the
     // graph is acyclic while traversing it.
-    let mut order = vec![];
-    order.reserve(n);
+    let mut order = Vec::with_capacity(n);
     // XXX: Note that piece of junk that is rust does not do
     // vector<bool> optimisation like C++! it allocates byte for each
     // bool -- 7 wasted bits/bool! However, for now I am just going to
@@ -228,14 +223,12 @@ fn _course_schedule() {
         if dd {
             order.push(i);
         }
-        return dd;
+        dd
     }
     for c in 0..n {
-        if !vis[c] {
-            if !top_sort(&adj, &mut order, &mut vis, c) {
-                println!("IMPOSSIBLE");
-                return;
-            }
+        if !vis[c] && !top_sort(&adj, &mut order, &mut vis, c) {
+            println!("IMPOSSIBLE");
+            return;
         }
     }
 
@@ -357,7 +350,7 @@ fn _planets_qs1() {
     }
     // XXX: Now read the queries
     let mut qs: Vec<(usize, usize)> = vec![(0, 0); q];
-    for counter in 0..q {
+    for cc in qs.iter_mut().take(q) {
         line.clear();
         std::io::stdin().read_line(&mut line).expect("input");
         let nums = line
@@ -365,7 +358,7 @@ fn _planets_qs1() {
             .split(' ')
             .flat_map(str::parse::<usize>)
             .collect::<Vec<_>>();
-        qs[counter] = (nums[0] - 1, nums[1]);
+        *cc = (nums[0] - 1, nums[1]);
     }
     // XXX: Now just traverse the vector depending upon the query
     for (s, k) in qs.iter_mut() {
@@ -419,9 +412,7 @@ fn _road_reparation() {
     // adj list
     let mut total_cost = 0;
     while !pq.is_empty() {
-        let (c, s, d) = match pq.pop().unwrap() {
-            Reverse(x) => x,
-        };
+        let Reverse((c, s, d)) = pq.pop().unwrap();
         // XXX: If the source and destination are both done then leave
         // the edge
         if !dd[s] || !dd[d] {
@@ -444,7 +435,7 @@ fn _road_reparation() {
         }
     }
     reachable(&adj, &mut vis, 0);
-    if !vis.iter().all(|&x| x == true) {
+    if !vis.iter().all(|&x| x) {
         println!("IMPOSSIBLE");
     } else {
         println!("{}", total_cost);
@@ -508,25 +499,24 @@ fn _teleporters_path() {
         degs[u[0] - 1] += 1;
         degs[u[1] - 1] += 1;
     }
-    if !degs.iter().all(|&x| x % 2 == 0) {
-        if degs.iter().filter(|&x| x % 2 != 0).count() != 2 {
-            println!("IMPOSSIBLE");
-            return;
-        }
+    if !degs.iter().all(|&x| x % 2 == 0) && degs.iter().filter(|&x| x % 2 != 0).count() != 2 {
+        println!("IMPOSSIBLE");
+        return;
     }
     // XXX: Now just do Eulerian path
     let mut q = vec![0];
     let mut path = Vec::with_capacity(ss[0]);
-    // XXX: BFS search for eulerain path
+    // XXX: DFS search for eulerain path
     while !q.is_empty() {
-        let hh = q.len() - 1;
-        if degs[q[hh]] == 0 {
+        // XXX: It still does bound checking, even in unsafe block
+        let dq = &mut degs[*q.last().unwrap()];
+        if *dq == 0 {
             path.push(q.pop());
         } else {
-            for (c, b) in adj[q[hh]].iter_mut() {
+            for (c, b) in adj[*q.last().unwrap()].iter_mut() {
                 if *b {
                     *b = false;
-                    degs[q[hh]] -= 1;
+                    *dq -= 1;
                     degs[*c] -= 1;
                     q.push(*c);
                     break;
@@ -535,9 +525,119 @@ fn _teleporters_path() {
         }
     }
     for c in path.iter().rev() {
-        print!("{} ", c.unwrap()+1);
+        print!("{} ", c.unwrap() + 1);
     }
     println!();
+}
+
+// XXX: This is an NP-hard problem, and I am not doing any memoization
+// currently for this example, because it is pretty small.
+fn _hamiltonian_flights() {
+    let ss = _read::<usize>();
+    let n = ss[0];
+    let m = ss[1];
+    // XXX: Since 20 is max for n, we are going to solve it using dfs
+    // and backtracking.
+    let mut adj: Vec<Vec<usize>> = vec![vec![]; n];
+    for _ in 0..m {
+        let ss = _read::<usize>();
+        adj[ss[0] - 1].push(ss[1] - 1);
+    }
+    let mut vis = vec![false; n];
+    fn dfs_hamiltonian(adj: &[Vec<usize>], vis: &mut [bool], s: usize, d: usize, paths: &mut i32) {
+        vis[s] = true;
+        if s == d {
+            if vis.iter().all(|&x| x) {
+                *paths += 1;
+            }
+            vis[s] = false;
+            return;
+        }
+        for c in adj[s].iter() {
+            if !vis[*c] {
+                dfs_hamiltonian(adj, vis, *c, d, paths);
+            }
+        }
+        // XXX: remove yourself from vis
+        vis[s] = false;
+    }
+    let mut paths = 0;
+    dfs_hamiltonian(&adj, &mut vis, 0, n - 1, &mut paths);
+    println!("{}", paths);
+}
+
+fn _giant_pizza() {
+    let ss = _read::<usize>();
+    let n = ss[0]; //the number of family members
+    let m = ss[1]; // the number of toppings
+    let mut adj: Vec<Vec<usize>> = vec![vec![]; m * 2];
+    let mut iadj: Vec<Vec<usize>> = vec![vec![]; m * 2];
+    for _ in 0..n {
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).expect("input");
+        let ss = line.trim().split(' ').collect::<Vec<_>>();
+        let f = str::parse::<usize>(ss[1]).unwrap() - 1;
+        let s = str::parse::<usize>(ss[3]).unwrap() - 1;
+        let (a, b, c, d) = match (ss[0], ss[2]) {
+            ("+", "+") => (f + m, s, s + m, f),
+            ("+", "-") => (f + m, s + m, s, f + m),
+            ("-", "+") => (f, s, s + m, f + m),
+            ("-", "-") => (f, s + m, s, f + m),
+            _ => exit(1),
+        };
+        // XXX: The implication graph
+        adj[a].push(b);
+        adj[c].push(d);
+        // XXX: The inverted implication graph
+        iadj[b].push(a);
+        iadj[d].push(c);
+    }
+    // println!("{:?}", adj);
+    // println!("{:?}", iadj);
+    // XXX: Now just do a top sort for the adj
+    let mut vis = vec![false; m * 2];
+    let mut paths = vec![];
+    for c in 0..m * 2 {
+        if !vis[c] {
+            _kosaraju(&adj, c, &mut vis, &mut paths);
+        }
+    }
+    vis.fill(false); //cleared the vector
+    // println!("paths: {:?}", paths);
+
+    // XXX: Now get the scc
+    let mut sccs: Vec<Vec<usize>> = vec![];
+    for c in paths.iter().rev() {
+        let mut scc = vec![];
+        if !vis[*c] {
+            _kosaraju(&iadj, *c, &mut vis, &mut scc);
+        }
+        if !scc.is_empty() {
+            sccs.push(scc);
+        }
+    }
+    // println!("{:?}", sccs);
+    // xxx: Check that forall a, a /\ !a do not occur in the same scc
+    if sccs.iter().all(|x| x.len() == 1) {
+        let mut ans = vec!['a'; m];
+        for c in sccs.iter() {
+            if c[0] >= m {
+                ans[c[0] - m] = if ans[c[0] - m] == 'a' {
+                    '+'
+                } else {
+                    ans[c[0] - m]
+                }
+            } else {
+                ans[c[0]] = if ans[c[0]] == 'a' { '-' } else { ans[c[0]] }
+            }
+        }
+        ans.iter().for_each(|&x| print!("{} ", x));
+	println!();
+    } else {
+        // TODO: do a reachability check for i in 0 .. m, can i reach
+        // i+m in any scc?
+        println!("IMPOSSIBLE");
+    }
 }
 
 fn main() {
@@ -554,4 +654,6 @@ fn main() {
     // _road_reparation(); // kruskal' algo for minimum spanning tree
     // _flight_routes_check(); // strongly connected components, Kosaraju' alog
     // _teleporters_path(); //eulerian path
+    // _hamiltonian_flights(); //hamiltonian path, NP-hard, without memoization
+    // _giant_pizza(); //2-sat problem, implication graph with scc
 }
