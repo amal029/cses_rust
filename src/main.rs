@@ -603,7 +603,7 @@ fn _giant_pizza() {
         }
     }
     vis.fill(false); //cleared the vector
-    // println!("paths: {:?}", paths);
+                     // println!("paths: {:?}", paths);
 
     // XXX: Now get the scc
     let mut sccs: Vec<Vec<usize>> = vec![];
@@ -632,12 +632,79 @@ fn _giant_pizza() {
             }
         }
         ans.iter().for_each(|&x| print!("{} ", x));
-	println!();
+        println!();
     } else {
         // TODO: do a reachability check for i in 0 .. m, can i reach
         // i+m in any scc?
         println!("IMPOSSIBLE");
     }
+}
+
+fn _greed_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col: usize) -> bool {
+    // XXX: Move through each row and get the first to_match.
+    let cc = m[row]
+        .iter()
+        .enumerate()
+        .filter(|&(t, x)| *x == tom && t >= col)
+        .map(|(t, &_)| t)
+        .collect::<Vec<usize>>();
+    let mut done = false;
+    // XXX: This gives better temporal/spatial locality
+    for j in cc.iter() {
+        if cols[*j] == -1 {
+            let idx = cols
+                .iter()
+                .enumerate()
+                .filter(|&(_, x)| *x as usize == row)
+                .map(|(t, &_)| t)
+                .collect::<Vec<usize>>();
+            assert!(idx.len() <= 1);
+            if idx.len() == 1 {
+                cols[idx[0]] = -1
+            } // remove yourself
+            cols[*j] = row as i64; // add yourself to the new position
+            done = true;
+            break;
+        }
+    }
+    if !done {
+        // XXX: Now re-assign a previous col if you can
+        for _j in cc.iter() {
+            // XXX: Try moving one by one if possible
+            done = _greed_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
+            if done {
+                // XXX: Add yourself to the cols
+                cols[*_j] = row as i64;
+                break;
+            }
+        }
+    }
+    done
+}
+
+// XXX: Maximum matching for a bi-partite graph
+fn _school_dance() {
+    let ss = _read::<usize>();
+    let mut adj: Vec<Vec<usize>> = vec![vec![0; ss[1]]; ss[0]];
+    for _ in 0..ss[2] {
+        let ss = _read::<usize>();
+        adj[ss[0] - 1][ss[1] - 1] = 1;
+    }
+    // XXX: Now just do a greedy matching algorithm
+    let mut cols = vec![-1i64; ss[1]];
+    for i in 0..ss[0] {
+        _greed_match(&adj, &mut cols, 1, i, 0);
+    }
+    let cc = cols
+        .iter()
+        .enumerate()
+        .filter(|&(_, x)| *x != -1)
+        .map(|(t, &x)| (t, x))
+        .collect::<Vec<(usize, i64)>>();
+    println!("{}", cc.len());
+    cc.iter().for_each(|&(t, x)| {
+        println!("{} {}", x + 1, t + 1);
+    });
 }
 
 fn main() {
@@ -656,4 +723,5 @@ fn main() {
     // _teleporters_path(); //eulerian path
     // _hamiltonian_flights(); //hamiltonian path, NP-hard, without memoization
     // _giant_pizza(); //2-sat problem, implication graph with scc
+    // _school_dance(); //maximum matching for bi-partite graph -- using greedy algo
 }
