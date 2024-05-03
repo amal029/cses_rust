@@ -2,8 +2,9 @@
 // Website: https://cses.fi/problemset/list/
 
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, VecDeque};
 use std::process::exit;
+use std::usize::MAX;
 
 // XXX: Just made a generic reader for all problems
 fn _read<T>() -> Vec<T>
@@ -640,7 +641,7 @@ fn _giant_pizza() {
     }
 }
 
-fn _greed_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col: usize) -> bool {
+fn _greedy_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col: usize) -> bool {
     // XXX: Move through each row and get the first to_match.
     let cc = m[row]
         .iter()
@@ -671,7 +672,7 @@ fn _greed_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col:
         // XXX: Now re-assign a previous col if you can
         for _j in cc.iter() {
             // XXX: Try moving one by one if possible
-            done = _greed_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
+            done = _greedy_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
             if done {
                 // XXX: Add yourself to the cols
                 cols[*_j] = row as i64;
@@ -693,7 +694,7 @@ fn _school_dance() {
     // XXX: Now just do a greedy matching algorithm
     let mut cols = vec![-1i64; ss[1]];
     for i in 0..ss[0] {
-        _greed_match(&adj, &mut cols, 1, i, 0);
+        _greedy_match(&adj, &mut cols, 1, i, 0);
     }
     let cc = cols
         .iter()
@@ -705,6 +706,102 @@ fn _school_dance() {
     cc.iter().for_each(|&(t, x)| {
         println!("{} {}", x + 1, t + 1);
     });
+}
+
+fn _bfs_max_flow(s: usize, t: usize, ps: &mut [usize], adj: &[Vec<usize>], cap: &[Vec<i8>]) -> i8 {
+    // XXX: Make a queue
+    ps.fill(MAX);
+    ps[s] = MAX - 1; //just to be different
+    let mut q = VecDeque::new();
+    q.push_back((s, MAX));
+    let mut flow = 0;
+    while !q.is_empty() {
+        let (p, v) = q.pop_front().unwrap();
+        if p == t {
+            // XXX: We reached the terminal node
+            flow = v;
+            break;
+        }
+        for &c in adj[p].iter() {
+            let cv = cap[p][c] as usize;
+            if ps[c] == MAX && cv > 0 {
+                q.push_back((c, std::cmp::min(v, cv)));
+                ps[c] = p;
+            }
+        }
+    }
+    flow as i8
+}
+
+fn _police_chase() {
+    const VAL: i8 = 1i8;
+    let ss = _read::<usize>();
+    let mut adj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
+    let mut cap: Vec<Vec<i8>> = vec![vec![-1; ss[0]]; ss[0]];
+    for _ in 0..ss[1] {
+        let s = _read::<usize>();
+        adj[s[0] - 1].push(s[1] - 1);
+        adj[s[1] - 1].push(s[0] - 1);
+        cap[s[0] - 1][s[1] - 1] = VAL;
+        cap[s[1] - 1][s[0] - 1] = 0;
+    }
+
+    // XXX: Now just do ford-fulkerson algorithm
+    let mut flow: i8;
+    let mut parents: Vec<usize> = vec![MAX; ss[0]];
+    loop {
+        flow = _bfs_max_flow(0, ss[0] - 1, &mut parents, &adj, &cap);
+        if flow == 0 {
+            break;
+        };
+        // XXX: Update the capacity matrix
+        let mut c: usize = ss[0] - 1;
+        let mut p: usize = parents[c];
+        while p != (MAX - 1) {
+            cap[p][c] -= VAL;
+            cap[c][p] += VAL;
+            c = p;
+            p = parents[c];
+        }
+    }
+    // XXX: Now just get the s-t cut
+    fn dfs_st(
+        adj: &[Vec<usize>],
+        cap: &[Vec<i8>],
+        s: usize,
+        res: &mut Vec<usize>,
+        vis: &mut [bool],
+    ) {
+        vis[s] = true;
+        for &c in adj[s].iter() {
+            if !vis[c] && cap[s][c] > 0 {
+                dfs_st(adj, cap, c, res, vis);
+            }
+        }
+        res.push(s);
+    }
+    let mut vis = vec![false; ss[0]];
+    let mut res: Vec<_> = vec![];
+    dfs_st(&adj, &cap, 0, &mut res, &mut vis);
+    // XXX: Get the edges to cut
+    let mut ress: Vec<(usize, usize)> = vec![];
+    for (j, &r) in res.iter().enumerate() {
+        let u = cap[r]
+            .iter()
+            .enumerate()
+            .filter(|&(_, x)| *x == 0)
+            .map(|(i, &_)| i);
+        let _y = u.filter(|&x| !match res.iter().find(|&&y| y == x) {
+            Some(_) => true,
+            None => false,
+        });
+        for k in _y {
+            ress.push((j + 1, k + 1));
+        }
+    }
+    // XXX: Finally print the result
+    println!("{}", ress.len());
+    ress.iter().for_each(|&(i, j)| println!("{} {}", i, j));
 }
 
 fn main() {
@@ -723,5 +820,8 @@ fn main() {
     // _teleporters_path(); //eulerian path
     // _hamiltonian_flights(); //hamiltonian path, NP-hard, without memoization
     // _giant_pizza(); //2-sat problem, implication graph with scc
-    // _school_dance(); //maximum matching for bi-partite graph -- using greedy algo
+    // _school_dance(); //maximum matching for bi-partite graph -- greedy algo
+    // _police_chase(); // max-flow min s-t cut, ford-fulkerson algorithm
+
+    // XXX: String algorithms
 }
