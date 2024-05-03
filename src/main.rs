@@ -6,6 +6,8 @@ use std::collections::{BinaryHeap, VecDeque};
 use std::process::exit;
 use std::usize::MAX;
 
+type Us = usize;
+
 // XXX: Just made a generic reader for all problems
 fn _read<T>() -> Vec<T>
 where
@@ -641,7 +643,7 @@ fn _giant_pizza() {
     }
 }
 
-fn _greedy_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col: usize) -> bool {
+fn _g_match(m: &[Vec<Us>], cols: &mut [i64], tom: Us, row: Us, col: Us) -> bool {
     // XXX: Move through each row and get the first to_match.
     let cc = m[row]
         .iter()
@@ -672,7 +674,7 @@ fn _greedy_match(m: &[Vec<usize>], cols: &mut [i64], tom: usize, row: usize, col
         // XXX: Now re-assign a previous col if you can
         for _j in cc.iter() {
             // XXX: Try moving one by one if possible
-            done = _greedy_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
+            done = _g_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
             if done {
                 // XXX: Add yourself to the cols
                 cols[*_j] = row as i64;
@@ -694,7 +696,7 @@ fn _school_dance() {
     // XXX: Now just do a greedy matching algorithm
     let mut cols = vec![-1i64; ss[1]];
     for i in 0..ss[0] {
-        _greedy_match(&adj, &mut cols, 1, i, 0);
+        _g_match(&adj, &mut cols, 1, i, 0);
     }
     let cc = cols
         .iter()
@@ -790,12 +792,9 @@ fn _police_chase() {
             .iter()
             .enumerate()
             .filter(|&(_, x)| *x == 0)
-            .map(|(i, &_)| i);
-        let _y = u.filter(|&x| !match res.iter().find(|&&y| y == x) {
-            Some(_) => true,
-            None => false,
-        });
-        for k in _y {
+            .map(|(i, &_)| i)
+            .filter(|&x| !res.iter().any(|&y| y == x));
+        for k in u {
             ress.push((j + 1, k + 1));
         }
     }
