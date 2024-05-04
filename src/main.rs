@@ -871,20 +871,20 @@ where
 fn seg_tree_update<F, T>(qi: Us, val: T, _stree: &mut [SegNode<T>], f: &F, i: Us)
 where
     F: for<'a> Fn(&'a T, &'a T) -> T,
-    T: Default + Copy,
+    T: Default,
 {
     if qi == _stree[i].li && qi == _stree[i].ui {
         // XXX: Return the value found -- base case
         _stree[i].val = val;
     } else if qi >= _stree[i * 2 + 1].li && qi <= _stree[i * 2 + 1].ui {
         // XXX: Enter the left child
-        seg_tree_query(_stree, qi, qi, f, i * 2 + 1);
-        // XXX: Now update this value looking at the child value
+        seg_tree_update(qi, val, _stree, f, i * 2 + 1);
+        // XXX: Now update this value looking at the child values
         _stree[i].val = f(&_stree[i * 2 + 1].val, &_stree[i * 2 + 2].val);
     } else if qi >= _stree[i * 2 + 2].li && qi <= _stree[i * 2 + 2].ui {
         // XXX: Enter the right child
-        seg_tree_query(_stree, qi, qi, f, i * 2 + 2);
-        // XXX: Now update this value looking at the child value
+        seg_tree_update(qi, val, _stree, f, i * 2 + 2);
+        // XXX: Now update this value looking at the child values
         _stree[i].val = f(&_stree[i * 2 + 2].val, &_stree[i * 2 + 2].val);
     } else {
         // XXX: This should never happen!
