@@ -803,6 +803,120 @@ fn _police_chase() {
     ress.iter().for_each(|&(i, j)| println!("{} {}", i, j));
 }
 
+#[derive(Debug, Clone, Default)]
+struct SegNode<T>
+where
+    T: Default,
+{
+    li: Us,
+    val: T,
+    ui: Us,
+}
+
+// XXX: f1 is the base case function. f2 is the merge case function
+fn _build_seg_tree<F1, T>(o: &[T], _stree: &mut [SegNode<T>], f1: &F1, s: Us, e: Us, i: Us)
+where
+    F1: for<'a> Fn(&'a T, &'a T) -> T,
+    T: Default + Copy,
+{
+    // XXX: The base case
+    if s == e - 1 {
+        _stree[i] = SegNode {
+            li: s,
+            val: o[s],
+            ui: e - 1,
+        };
+    } else {
+        // XXX: The recursive case
+        let mid = (e - s) / 2;
+        // XXX: Do the left child
+        _build_seg_tree(o, _stree, f1, s, s + mid, i * 2 + 1);
+        // XXX: The the right child
+        _build_seg_tree(o, _stree, f1, s + mid, e, i * 2 + 2);
+        // XXX: Merge the outcome of the children
+        _stree[i] = SegNode {
+            li: s,
+            val: f1(&_stree[i * 2 + 1].val, &_stree[i * 2 + 2].val),
+            ui: e - 1,
+        }
+    }
+}
+
+// XXX: I expect only numbers to be present in the segment tree so I am
+// using Copy trait on T.
+fn seg_tree_query<F, T>(_stree: &[SegNode<T>], qil: Us, qiu: Us, f: &F, i: Us) -> T
+where
+    F: for<'a> Fn(&'a T, &'a T) -> T,
+    T: Default + Copy,
+{
+    if qil == _stree[i].li && qiu == _stree[i].ui {
+        // XXX: Return the value found -- base case
+        _stree[i].val
+    } else if qil >= _stree[i * 2 + 1].li && qiu <= _stree[i * 2 + 1].ui {
+        // XXX: Enter the left child
+        seg_tree_query(_stree, qil, qiu, f, i * 2 + 1)
+    } else if qil >= _stree[i * 2 + 2].li && qiu <= _stree[i * 2 + 2].ui {
+        // XXX: Enter the right child
+        seg_tree_query(_stree, qil, qiu, f, i * 2 + 2)
+    } else {
+        // XXX: Split the query into left and right child
+        let ll = seg_tree_query(_stree, qil, _stree[i * 2 + 1].ui, f, i * 2 + 1);
+        let rl = seg_tree_query(_stree, _stree[i * 2 + 2].li, qiu, f, i * 2 + 2);
+        f(&ll, &rl)
+    }
+}
+
+// XXX: I expect only numbers to be present in the segment tree so I am
+// using Copy trait on T.
+fn seg_tree_update<F, T>(qi: Us, val: T, _stree: &mut [SegNode<T>], f: &F, i: Us)
+where
+    F: for<'a> Fn(&'a T, &'a T) -> T,
+    T: Default + Copy,
+{
+    if qi == _stree[i].li && qi == _stree[i].ui {
+        // XXX: Return the value found -- base case
+        _stree[i].val = val;
+    } else if qi >= _stree[i * 2 + 1].li && qi <= _stree[i * 2 + 1].ui {
+        // XXX: Enter the left child
+        seg_tree_query(_stree, qi, qi, f, i * 2 + 1);
+        // XXX: Now update this value looking at the child value
+        _stree[i].val = f(&_stree[i * 2 + 1].val, &_stree[i * 2 + 2].val);
+    } else if qi >= _stree[i * 2 + 2].li && qi <= _stree[i * 2 + 2].ui {
+        // XXX: Enter the right child
+        seg_tree_query(_stree, qi, qi, f, i * 2 + 2);
+        // XXX: Now update this value looking at the child value
+        _stree[i].val = f(&_stree[i * 2 + 2].val, &_stree[i * 2 + 2].val);
+    } else {
+        // XXX: This should never happen!
+        panic!("Entered a wrong branch!");
+    }
+}
+
+fn xor_query() {
+    let ss = _read::<Us>();
+    let _sg = _read::<Us>();
+    let mut qs: Vec<(Us, Us)> = vec![(0, 0); ss[1]];
+    for counter in 0..ss[1] {
+        let m = _read::<Us>();
+        qs[counter] = (m[0] - 1, m[1] - 1);
+    }
+    // XXX: Make a segment tree for _sg
+    let h = (ss[0] as f64).log2().ceil() as Us;
+    let mut i = 1;
+    for j in 0..h {
+        i += 2 << j;
+    }
+    let f = |x: &Us, y: &Us| x ^ y; // the xor function on usize
+    let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
+    _build_seg_tree(&_sg, &mut _stree, &f, 0, ss[0], 0);
+
+    // XXX: Now process the queries.
+    for &(qil, qiu) in qs.iter() {
+        // println!("tutu: {} {}", qil, qiu);
+        println!("{}", seg_tree_query(&_stree, qil, qiu, &f, 0));
+    }
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -822,5 +936,6 @@ fn main() {
     // _school_dance(); //maximum matching for bi-partite graph -- greedy algo
     // _police_chase(); // max-flow min s-t cut, ford-fulkerson algorithm
 
-    // XXX: String algorithms
+    // XXX: Range queries
+    xor_query();
 }
