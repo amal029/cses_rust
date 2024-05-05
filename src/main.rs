@@ -814,8 +814,8 @@ where
 }
 
 // XXX: f1 is the base case function. f2 is the merge case function
-fn _build_seg_tree<F1, F2, T>(
-    o: &[T],
+fn _build_seg_tree<F1, F2, T, U>(
+    o: &[U],
     _stree: &mut [SegNode<T>],
     f1: &F1,
     f2: &F2,
@@ -824,8 +824,9 @@ fn _build_seg_tree<F1, F2, T>(
     i: Us,
 ) where
     F1: for<'a> Fn(&'a T, &'a T) -> T,
-    F2: for<'a> Fn(&'a T) -> T,
+    F2: for<'a> Fn(&'a U) -> T,
     T: Default + Copy,
+    U: Default + Copy,
 {
     // XXX: The base case
     if s == e - 1 {
@@ -850,8 +851,6 @@ fn _build_seg_tree<F1, F2, T>(
     }
 }
 
-// XXX: I expect only numbers to be present in the segment tree so I am
-// using Copy trait on T.
 fn _seg_tree_query<F, T>(_stree: &[SegNode<T>], qil: Us, qiu: Us, f: &F, i: Us) -> T
 where
     F: for<'a> Fn(&'a T, &'a T) -> T,
@@ -876,10 +875,10 @@ where
 
 // XXX: This can be made much better using a simple while loop going
 // upwards to parent.
-fn _seg_tree_update<F, F2, T>(qi: Us, val: T, _stree: &mut [SegNode<T>], f: &F, f2: &F2, i: Us)
+fn _seg_tree_update<F, F2, T, U>(qi: Us, val: U, _stree: &mut [SegNode<T>], f: &F, f2: &F2, i: Us)
 where
     F: for<'a> Fn(&'a T, &'a T) -> T,
-    F2: for<'a> Fn(&'a T) -> T,
+    F2: for<'a> Fn(&'a U) -> T,
     T: Default,
 {
     if qi == _stree[i]._li && qi == _stree[i]._ui {
@@ -894,7 +893,7 @@ where
         // XXX: Enter the right child
         _seg_tree_update(qi, val, _stree, f, f2, i * 2 + 2);
         // XXX: Now update this value looking at the child values
-        _stree[i]._val = f(&_stree[i * 2 + 2]._val, &_stree[i * 2 + 2]._val);
+        _stree[i]._val = f(&_stree[i * 2 + 1]._val, &_stree[i * 2 + 2]._val);
     } else {
         // XXX: This should never happen!
         panic!("Entered a wrong branch!");
@@ -982,6 +981,39 @@ fn _hotel_queries() {
     println!();
 }
 
+fn _max_array_sums() {
+    let _ss = _read::<Us>();
+    let _a = _read::<i64>();
+    let mut qs: Vec<(Us, i64)> = vec![(0, 0); _ss[1]];
+    for i in 0.._ss[1] {
+        let mm = _read::<i64>();
+        qs[i] = ((mm[0] - 1) as Us, mm[1]);
+    }
+    type Ps = i64;
+    type Ss = i64;
+    type Ms = i64;
+    type Ts = i64;
+    let h = (_ss[0] as f64).log2().ceil() as usize;
+    let i = (0..h).map(|x| 2 << x).sum::<usize>() + 1;
+    let mut _stree: Vec<SegNode<(Ps, Ss, Ms, Ts)>> = vec![Default::default(); i];
+    // XXX: The merge function for max sums
+    let f1 = |x: &(Ps, Ss, Ms, Ts), y: &(Ps, Ss, Ms, Ts)| {
+        let ps = max(x.0, x.3 + y.0); // prefix sum
+        let ss = max(y.1, y.3 + x.1); // suffix sum
+        let ts = x.3 + y.3; // total sum
+        let ms = max(x.2, y.2);
+        let ms = max(ms, x.1 + y.0);
+        (ps, ss, ms, ts)
+    };
+    let f2 = |x: &i64| (*x, *x, *x, *x);
+    // XXX: Make the segment tree
+    _build_seg_tree(&_a, &mut _stree, &f1, &f2, 0, _ss[0], 0);
+    for &(k, v) in qs.iter() {
+        _seg_tree_update(k, v, &mut _stree, &f1, &f2, 0);
+        println!("{}", _stree[0]._val.2);
+    }
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1004,4 +1036,5 @@ fn main() {
     // XXX: Range queries
     // _xor_query();
     // _hotel_queries();
+    // _max_array_sums();
 }
