@@ -808,36 +808,44 @@ struct SegNode<T>
 where
     T: Default,
 {
-    li: Us,
-    val: T,
-    ui: Us,
+    _li: Us,
+    _val: T,
+    _ui: Us,
 }
 
 // XXX: f1 is the base case function. f2 is the merge case function
-fn _build_seg_tree<F1, T>(o: &[T], _stree: &mut [SegNode<T>], f1: &F1, s: Us, e: Us, i: Us)
-where
+fn _build_seg_tree<F1, F2, T>(
+    o: &[T],
+    _stree: &mut [SegNode<T>],
+    f1: &F1,
+    f2: &F2,
+    s: Us,
+    e: Us,
+    i: Us,
+) where
     F1: for<'a> Fn(&'a T, &'a T) -> T,
+    F2: for<'a> Fn(&'a T) -> T,
     T: Default + Copy,
 {
     // XXX: The base case
     if s == e - 1 {
         _stree[i] = SegNode {
-            li: s,
-            val: o[s],
-            ui: e - 1,
+            _li: s,
+            _val: f2(&o[s]),
+            _ui: e - 1,
         };
     } else {
         // XXX: The recursive case
         let mid = (e - s) / 2;
         // XXX: Do the left child
-        _build_seg_tree(o, _stree, f1, s, s + mid, i * 2 + 1);
+        _build_seg_tree(o, _stree, f1, f2, s, s + mid, i * 2 + 1);
         // XXX: The the right child
-        _build_seg_tree(o, _stree, f1, s + mid, e, i * 2 + 2);
+        _build_seg_tree(o, _stree, f1, f2, s + mid, e, i * 2 + 2);
         // XXX: Merge the outcome of the children
         _stree[i] = SegNode {
-            li: s,
-            val: f1(&_stree[i * 2 + 1].val, &_stree[i * 2 + 2].val),
-            ui: e - 1,
+            _li: s,
+            _val: f1(&_stree[i * 2 + 1]._val, &_stree[i * 2 + 2]._val),
+            _ui: e - 1,
         }
     }
 }
@@ -849,43 +857,44 @@ where
     F: for<'a> Fn(&'a T, &'a T) -> T,
     T: Default + Copy,
 {
-    if qil == _stree[i].li && qiu == _stree[i].ui {
+    if qil == _stree[i]._li && qiu == _stree[i]._ui {
         // XXX: Return the value found -- base case
-        _stree[i].val
-    } else if qil >= _stree[i * 2 + 1].li && qiu <= _stree[i * 2 + 1].ui {
+        _stree[i]._val
+    } else if qil >= _stree[i * 2 + 1]._li && qiu <= _stree[i * 2 + 1]._ui {
         // XXX: Enter the left child
         _seg_tree_query(_stree, qil, qiu, f, i * 2 + 1)
-    } else if qil >= _stree[i * 2 + 2].li && qiu <= _stree[i * 2 + 2].ui {
+    } else if qil >= _stree[i * 2 + 2]._li && qiu <= _stree[i * 2 + 2]._ui {
         // XXX: Enter the right child
         _seg_tree_query(_stree, qil, qiu, f, i * 2 + 2)
     } else {
         // XXX: Split the query into left and right child
-        let ll = _seg_tree_query(_stree, qil, _stree[i * 2 + 1].ui, f, i * 2 + 1);
-        let rl = _seg_tree_query(_stree, _stree[i * 2 + 2].li, qiu, f, i * 2 + 2);
+        let ll = _seg_tree_query(_stree, qil, _stree[i * 2 + 1]._ui, f, i * 2 + 1);
+        let rl = _seg_tree_query(_stree, _stree[i * 2 + 2]._li, qiu, f, i * 2 + 2);
         f(&ll, &rl)
     }
 }
 
 // XXX: This can be made much better using a simple while loop going
 // upwards to parent.
-fn _seg_tree_update<F, T>(qi: Us, val: T, _stree: &mut [SegNode<T>], f: &F, i: Us)
+fn _seg_tree_update<F, F2, T>(qi: Us, val: T, _stree: &mut [SegNode<T>], f: &F, f2: &F2, i: Us)
 where
     F: for<'a> Fn(&'a T, &'a T) -> T,
+    F2: for<'a> Fn(&'a T) -> T,
     T: Default,
 {
-    if qi == _stree[i].li && qi == _stree[i].ui {
+    if qi == _stree[i]._li && qi == _stree[i]._ui {
         // XXX: Return the value found -- base case
-        _stree[i].val = val;
-    } else if qi >= _stree[i * 2 + 1].li && qi <= _stree[i * 2 + 1].ui {
+        _stree[i]._val = f2(&val);
+    } else if qi >= _stree[i * 2 + 1]._li && qi <= _stree[i * 2 + 1]._ui {
         // XXX: Enter the left child
-        _seg_tree_update(qi, val, _stree, f, i * 2 + 1);
+        _seg_tree_update(qi, val, _stree, f, f2, i * 2 + 1);
         // XXX: Now update this value looking at the child values
-        _stree[i].val = f(&_stree[i * 2 + 1].val, &_stree[i * 2 + 2].val);
-    } else if qi >= _stree[i * 2 + 2].li && qi <= _stree[i * 2 + 2].ui {
+        _stree[i]._val = f(&_stree[i * 2 + 1]._val, &_stree[i * 2 + 2]._val);
+    } else if qi >= _stree[i * 2 + 2]._li && qi <= _stree[i * 2 + 2]._ui {
         // XXX: Enter the right child
-        _seg_tree_update(qi, val, _stree, f, i * 2 + 2);
+        _seg_tree_update(qi, val, _stree, f, f2, i * 2 + 2);
         // XXX: Now update this value looking at the child values
-        _stree[i].val = f(&_stree[i * 2 + 2].val, &_stree[i * 2 + 2].val);
+        _stree[i]._val = f(&_stree[i * 2 + 2]._val, &_stree[i * 2 + 2]._val);
     } else {
         // XXX: This should never happen!
         panic!("Entered a wrong branch!");
@@ -897,13 +906,13 @@ where
     T: Default,
     F: Fn(&T, &T) -> bool,
 {
-    if f(&val, &_stree[i].val) && _stree[i].li == _stree[i].ui {
+    if f(&val, &_stree[i]._val) && _stree[i]._li == _stree[i]._ui {
         // XXX: Element found in the leaf node
         i as i64
-    } else if f(&val, &_stree[i * 2 + 1].val) {
+    } else if f(&val, &_stree[i * 2 + 1]._val) {
         // XXX: Enter the left child first
         _seg_tree_q_by_val(_stree, f, val, i * 2 + 1)
-    } else if f(&val, &_stree[i * 2 + 2].val) {
+    } else if f(&val, &_stree[i * 2 + 2]._val) {
         // XXX: Enter the right child
         _seg_tree_q_by_val(_stree, f, val, i * 2 + 2)
     } else {
@@ -927,8 +936,9 @@ fn _xor_query() {
         i += 2 << j;
     }
     let f = |x: &Us, y: &Us| x ^ y; // the xor function on usize
+    let f2 = |x: &Us| *x;
     let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
-    _build_seg_tree(&_sg, &mut _stree, &f, 0, ss[0], 0);
+    _build_seg_tree(&_sg, &mut _stree, &f, &f2, 0, ss[0], 0);
 
     // XXX: Now process the queries.
     for &(qil, qiu) in qs.iter() {
@@ -937,7 +947,7 @@ fn _xor_query() {
     }
 }
 
-fn hotel_queries() {
+fn _hotel_queries() {
     let ss = _read::<Us>();
     let hotels = _read::<Us>();
     let _rooms = _read::<Us>();
@@ -945,23 +955,26 @@ fn hotel_queries() {
     let i = (0..h).map(|x| 2 << x).sum::<Us>() + 1;
     let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
     let f1 = |x: &Us, y: &Us| *max(x, y);
-    _build_seg_tree(&hotels, &mut _stree, &f1, 0, ss[0], 0);
+    let f2 = |x: &Us| *x;
+    _build_seg_tree(&hotels, &mut _stree, &f1, &f2, 0, ss[0], 0);
     // println!("{:?}, {}", _stree, _stree.len());
     // XXX: Now query the node that has the first value that is required
     let f = |x: &Us, y: &Us| x <= y;
+    let f2 = |x: &Us| *x;
     for &q in _rooms.iter() {
         let res = _seg_tree_q_by_val(&_stree, &f, q, 0);
         // println!("{res}");
         if res != -1 {
             // XXX: The update the value in the node with the new amount
             _seg_tree_update(
-                _stree[res as usize].li,
-                _stree[res as usize].val - q,
+                _stree[res as usize]._li,
+                _stree[res as usize]._val - q,
                 &mut _stree,
                 &f1,
+                &f2,
                 0,
             );
-            print!("{} ", _stree[res as usize].li + 1);
+            print!("{} ", _stree[res as usize]._li + 1);
         } else {
             print!("{} ", res + 1);
         }
@@ -989,6 +1002,6 @@ fn main() {
     // _police_chase(); // max-flow min s-t cut, ford-fulkerson algorithm
 
     // XXX: Range queries
-    // xor_query();
-    hotel_queries();
+    // _xor_query();
+    // _hotel_queries();
 }
