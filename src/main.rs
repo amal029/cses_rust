@@ -1033,8 +1033,8 @@ fn main() {
     // _school_dance(); //maximum matching for bi-partite graph -- greedy algo
     // _police_chase(); // max-flow min s-t cut, ford-fulkerson algorithm
 
-    // XXX: Range queries
-    // _xor_query();
-    // _hotel_queries();
-    // _max_array_sums();
+    // XXX: Range queries -- segment tree examples for array range queries.
+    // _xor_query(); // xor segment tree
+    // _hotel_queries(); // max segment tree with updates
+    // _max_array_sums(); // max prefix/suffix/total sums
 }
