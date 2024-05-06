@@ -817,6 +817,7 @@ where
 fn _build_seg_tree<F1, F2, T, U>(
     o: &[U],
     _stree: &mut [SegNode<T>],
+    _vmap: &mut [usize],
     f1: &F1,
     f2: &F2,
     s: Us,
@@ -835,13 +836,14 @@ fn _build_seg_tree<F1, F2, T, U>(
             _val: f2(&o[s]),
             _ui: e - 1,
         };
+        _vmap[s] = i;
     } else {
         // XXX: The recursive case
         let mid = (e - s) / 2;
         // XXX: Do the left child
-        _build_seg_tree(o, _stree, f1, f2, s, s + mid, i * 2 + 1);
+        _build_seg_tree(o, _stree, _vmap, f1, f2, s, s + mid, i * 2 + 1);
         // XXX: The the right child
-        _build_seg_tree(o, _stree, f1, f2, s + mid, e, i * 2 + 2);
+        _build_seg_tree(o, _stree, _vmap, f1, f2, s + mid, e, i * 2 + 2);
         // XXX: Merge the outcome of the children
         _stree[i] = SegNode {
             _li: s,
@@ -937,7 +939,8 @@ fn _xor_query() {
     let f = |x: &Us, y: &Us| x ^ y; // the xor function on usize
     let f2 = |x: &Us| *x;
     let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
-    _build_seg_tree(&_sg, &mut _stree, &f, &f2, 0, ss[0], 0);
+    let mut _vmap: Vec<usize> = vec![0; ss[0]];
+    _build_seg_tree(&_sg, &mut _stree, &mut _vmap, &f, &f2, 0, ss[0], 0);
 
     // XXX: Now process the queries.
     for &(qil, qiu) in qs.iter() {
@@ -953,9 +956,10 @@ fn _hotel_queries() {
     let h = (hotels.len() as f64).log2().ceil() as Us;
     let i = (0..h).map(|x| 2 << x).sum::<Us>() + 1;
     let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
+    let mut _vmap: Vec<Us> = vec![0; ss[0]];
     let f1 = |x: &Us, y: &Us| *max(x, y);
     let f2 = |x: &Us| *x;
-    _build_seg_tree(&hotels, &mut _stree, &f1, &f2, 0, ss[0], 0);
+    _build_seg_tree(&hotels, &mut _stree, &mut _vmap, &f1, &f2, 0, ss[0], 0);
     // println!("{:?}, {}", _stree, _stree.len());
     // XXX: Now query the node that has the first value that is required
     let f = |x: &Us, y: &Us| x <= y;
@@ -996,6 +1000,7 @@ fn _max_array_sums() {
     let h = (_ss[0] as f64).log2().ceil() as usize;
     let i = (0..h).map(|x| 2 << x).sum::<usize>() + 1;
     let mut _stree: Vec<SegNode<(Ps, Ss, Ms, Ts)>> = vec![Default::default(); i];
+    let mut _vmap = vec![0usize; _ss[0]];
     // XXX: The merge function for max sums
     let f1 = |x: &(Ps, Ss, Ms, Ts), y: &(Ps, Ss, Ms, Ts)| {
         let ps = max(x.0, x.3 + y.0); // prefix sum
@@ -1007,10 +1012,66 @@ fn _max_array_sums() {
     };
     let f2 = |x: &i64| (*x, *x, *x, *x);
     // XXX: Make the segment tree
-    _build_seg_tree(&_a, &mut _stree, &f1, &f2, 0, _ss[0], 0);
+    _build_seg_tree(&_a, &mut _stree, &mut _vmap, &f1, &f2, 0, _ss[0], 0);
     for &(k, v) in qs.iter() {
         _seg_tree_update(k, v, &mut _stree, &f1, &f2, 0);
         println!("{}", _stree[0]._val.2);
+    }
+}
+
+fn _poly_queries() {
+    let _ss = _read::<Us>();
+    let _a = _read::<Us>();
+    let mut _qs = vec![(0u8, 0usize, 0usize); _ss[1]];
+    for _q in 0.._ss[1] {
+        let _ss = _read::<usize>();
+        _qs[_q] = (_ss[0] as u8, _ss[1], _ss[2]);
+    }
+    // XXX: Build the segment tree
+    let h = (_ss[0] as f64).log2().ceil() as usize;
+    let i = (0..h).map(|x| 2 << x).sum::<usize>() + 1;
+    let mut _stree: Vec<SegNode<Us>> = vec![Default::default(); i];
+    let mut _vmap = vec![0usize; _ss[0]];
+    let f1 = |x: &Us, y: &Us| x + y;
+    let f2 = |x: &Us| *x;
+    _build_seg_tree(&_a, &mut _stree, &mut _vmap, &f1, &f2, 0, _ss[0], 0);
+    // O(i) extra space used here
+    let mut _vis: Vec<bool> = vec![false; i];
+    // O(i) extra space used here -- max heap
+    let mut _pq: BinaryHeap<Us> = BinaryHeap::with_capacity(i);
+    // XXX: Now process the queries
+    // XXX: O(|q|)
+    for &(_q, _a, _b) in _qs.iter() {
+        match _q {
+            2 => println!("{}", _seg_tree_query(&_stree, _a - 1, _b - 1, &f1, 0)),
+            1 => {
+                let mut c = 1;
+                // XXX: O(_ss[0])
+                for i in _a - 1.._b {
+                    let vv = _vmap[i]; // index check
+                    _stree[vv]._val += c;
+                    // XXX: Put the parent into the _pq
+                    if !_vis[(vv - 1) / 2] {
+                        _pq.push((vv - 1) / 2);
+                        _vis[(vv - 1) / 2] = true;
+                    }
+                    c += 1;
+                }
+                // XXX: Now traverse upwards while _pq is not empty
+                // XXX: O(log(_ss[0]))
+                while !_pq.is_empty() {
+                    let y = _pq.pop().unwrap();
+                    let lc = &_stree[y * 2 + 1]._val;
+                    let rc = &_stree[y * 2 + 2]._val;
+                    _stree[y]._val = f1(lc, rc);
+                    if y > 0 && !_vis[(y - 1) / 2] {
+                        _vis[(y - 1) / 2] = true;
+                        _pq.push((y - 1) / 2);
+                    }
+                }
+            }
+            _ => exit(1),
+        }
     }
 }
 
@@ -1037,4 +1098,9 @@ fn main() {
     // _xor_query(); // xor segment tree
     // _hotel_queries(); // max segment tree with updates
     // _max_array_sums(); // max prefix/suffix/total sums
+
+    // This is a runtime efficient update of polynomial queries.
+    // However, it does use extra memory for a vector<bool> and a max
+    // heap.
+    // _poly_queries();
 }
