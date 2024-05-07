@@ -2,7 +2,7 @@
 // Website: https://cses.fi/problemset/list/
 
 use std::cmp::{max, Reverse};
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::process::exit;
 use std::usize::MAX;
 
@@ -1075,6 +1075,134 @@ fn _poly_queries() {
     }
 }
 
+// XXX: Build a suffix automat
+#[derive(Clone, Debug)]
+struct SuffixNode {
+    _next: HashMap<char, Us>,
+    _len: Us,
+    _slink: i64,
+    _idx: Us,
+    _fpos: Us,
+}
+
+impl Default for SuffixNode {
+    fn default() -> Self {
+        SuffixNode {
+            _next: HashMap::default(),
+            _len: 0,
+            _slink: -1,
+            _idx: 0,
+            _fpos: 0,
+        }
+    }
+}
+
+fn _build_suffix_automata(_s: &String, _v: &mut Vec<SuffixNode>) -> Us {
+    let mut _last = 0i64; // The first node
+    let mut _ss = 1usize; // The total number of nodes in the
+                          // suffix automata
+    for _c in _s.chars() {
+        // println!("Putting char: {_c}");
+        let _curr = _ss; // index of the curr node
+
+        // XXX: First make a new node
+        let mut nnode = SuffixNode::default();
+        nnode._len += _v[_last as Us]._len + 1;
+        nnode._idx = _curr;
+        nnode._fpos = nnode._len - 1;
+        _v.push(nnode);
+
+        _ss += 1; // total number of nodes increased by 1
+
+        // XXX: Now traverse back to make connections
+        let mut _p = _last;
+        while _p != -1 && !_v[_p as Us]._next.contains_key(&_c) {
+            let n = &mut _v[_p as Us];
+            n._next.insert(_c, _curr);
+            _p = n._slink;
+        }
+        if _p == -1 {
+            // XXX: Just add suffix link for current node
+            _v[_curr]._slink = 0;
+        } else {
+            // XXX: This means there is another node with edge with
+            // label _c
+            let _q = _v[_p as Us]._next[&_c];
+            // println!("_q is: {_q}");
+            if _v[_q]._len == _v[_p as Us]._len + 1 {
+                _v[_curr]._slink = _q as i64;
+            } else {
+                // XXX: Make a clone of q
+                let mut _clone = _v[_q].clone();
+                // println!("cloned node: {:?}", _clone);
+                let _clone_idx = _ss;
+                // println!("cloned index: {:?}", _clone_idx);
+                _ss += 1;
+                _clone._len = _v[_p as Us]._len + 1;
+                _clone._fpos = _clone._len - 1;
+                _clone._idx = _clone_idx;
+                // println!("cloned node after update: {:?}", _clone);
+                _v.push(_clone);
+                while _p != -1 && _v[_p as Us]._next[&_c] == _q {
+                    *_v[_p as Us]._next.get_mut(&_c).unwrap() = _clone_idx;
+                    _p = _v[_p as Us]._slink;
+                }
+                // XXX: Finally update the suffix links for _q and _clone
+                _v[_q]._slink = _clone_idx as i64;
+                _v[_curr]._slink = _clone_idx as i64;
+            }
+        }
+        _last = _curr as i64;
+    }
+    _last as Us
+}
+fn _paths_to_term_states(ps: &mut [Us], ts: &[bool], am: &[SuffixNode], s: Us) {
+    if ts[s] {
+        ps[s] += 1;
+    }
+    for (&_, &v) in am[s]._next.iter() {
+        if ps[v] == 0 {
+            _paths_to_term_states(ps, ts, am, v);
+        }
+        ps[s] += ps[v];
+    }
+}
+
+fn _string_matching() {
+    let _ss = _read::<String>();
+    let _p = _read::<String>();
+
+    // XXX: Make the initial node i
+    let _i = SuffixNode::default();
+    // XXX: The vector where the suffix automata will be kept
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(2 * _ss[0].len());
+    // XXX: Push the initial node in position 0
+    _vec.push(_i);
+    // XXX: Now build the suffix automata
+    let last = _build_suffix_automata(&_ss[0], &mut _vec);
+    // XXX: Get the terminal nodes in the suffix automata
+    let mut term_nodes = vec![false; _vec.len()];
+    fn terminal_nodes(vec: &[SuffixNode], tnodes: &mut [bool], s: Us) {
+        let mut p = s;
+        while p != 0 {
+            tnodes[p] = true;
+            p = vec[p]._slink as Us;
+        }
+    }
+    terminal_nodes(&_vec, &mut term_nodes, last);
+
+    // XXX: Get the paths to terminal node(s) for each state in the
+    // automata
+    let mut _path_to_terms = vec![0; _vec.len()];
+    _paths_to_term_states(&mut _path_to_terms, &term_nodes, &_vec, 0);
+    // XXX: Now get the matching result
+    let mut vv = 0usize;
+    for c in _p[0].chars() {
+        vv = *_vec[vv]._next.get(&c).unwrap();
+    }
+    println!("{}", _path_to_terms[vv]);
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1103,4 +1231,7 @@ fn main() {
     // However, it does use extra memory for a vector<bool> and a max
     // heap.
     // _poly_queries();
+
+    // XXX: String processing
+    _string_matching();
 }
