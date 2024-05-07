@@ -3,6 +3,7 @@
 
 use std::cmp::{max, Reverse};
 use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::iter::zip;
 use std::process::exit;
 use std::usize::MAX;
 
@@ -1097,7 +1098,7 @@ impl Default for SuffixNode {
     }
 }
 
-fn _build_suffix_automata(_s: &String, _v: &mut Vec<SuffixNode>) -> Us {
+fn _build_suffix_automata(_s: &str, _v: &mut Vec<SuffixNode>) -> Us {
     let mut _last = 0i64; // The first node
     let mut _ss = 1usize; // The total number of nodes in the
                           // suffix automata
@@ -1156,6 +1157,7 @@ fn _build_suffix_automata(_s: &String, _v: &mut Vec<SuffixNode>) -> Us {
     }
     _last as Us
 }
+
 fn _paths_to_term_states(ps: &mut [Us], ts: &[bool], am: &[SuffixNode], s: Us) {
     if ts[s] {
         ps[s] += 1;
@@ -1165,6 +1167,14 @@ fn _paths_to_term_states(ps: &mut [Us], ts: &[bool], am: &[SuffixNode], s: Us) {
             _paths_to_term_states(ps, ts, am, v);
         }
         ps[s] += ps[v];
+    }
+}
+
+fn _terminal_nodes(vec: &[SuffixNode], tnodes: &mut [bool], s: Us) {
+    let mut p = s;
+    while p != 0 {
+        tnodes[p] = true;
+        p = vec[p]._slink as Us;
     }
 }
 
@@ -1182,14 +1192,7 @@ fn _string_matching() {
     let last = _build_suffix_automata(&_ss[0], &mut _vec);
     // XXX: Get the terminal nodes in the suffix automata
     let mut term_nodes = vec![false; _vec.len()];
-    fn terminal_nodes(vec: &[SuffixNode], tnodes: &mut [bool], s: Us) {
-        let mut p = s;
-        while p != 0 {
-            tnodes[p] = true;
-            p = vec[p]._slink as Us;
-        }
-    }
-    terminal_nodes(&_vec, &mut term_nodes, last);
+    _terminal_nodes(&_vec, &mut term_nodes, last);
 
     // XXX: Get the paths to terminal node(s) for each state in the
     // automata
@@ -1201,6 +1204,209 @@ fn _string_matching() {
         vv = *_vec[vv]._next.get(&c).unwrap();
     }
     println!("{}", _path_to_terms[vv]);
+}
+
+fn _find_patterns() {
+    let ss = &_read::<String>()[0];
+    let n = _read::<usize>()[0];
+    // XXX: Build the suffix tree
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(2 * ss.len());
+    // XXX: Push the first node
+    _vec.push(SuffixNode::default());
+    // XXX: Build the suffix automata
+    _build_suffix_automata(ss, &mut _vec);
+    println!();
+    for _ in 0..n {
+        let mut vv = 0usize;
+        let mut done = true;
+        let o = &_read::<String>()[0];
+        for c in o.chars() {
+            match _vec[vv]._next.get(&c) {
+                Some(&x) => vv = x,
+                None => {
+                    done = false;
+                    break;
+                }
+            }
+        }
+        if !done {
+            println!("NO");
+        } else {
+            println!("YES");
+        }
+    }
+}
+
+fn _counting_patterns() {
+    let ss = &_read::<String>()[0];
+    let n = _read::<usize>()[0];
+    // XXX: Build the suffix tree
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(2 * ss.len());
+    // XXX: Push the first node
+    _vec.push(SuffixNode::default());
+    // XXX: Build the suffix automata
+    let last = _build_suffix_automata(ss, &mut _vec);
+    let mut term_nodes = vec![false; _vec.len()];
+    _terminal_nodes(&_vec, &mut term_nodes, last);
+
+    // XXX: Get the paths to terminal node(s) for each state in the
+    // automata
+    let mut _path_to_terms = vec![0; _vec.len()];
+    _paths_to_term_states(&mut _path_to_terms, &term_nodes, &_vec, 0);
+    // XXX: Get the number of paths to the terminal nodes
+    println!();
+    for _ in 0..n {
+        let mut vv = 0usize;
+        let mut done = true;
+        let o = &_read::<String>()[0];
+        for c in o.chars() {
+            match _vec[vv]._next.get(&c) {
+                Some(&x) => vv = x,
+                None => {
+                    done = false;
+                    break;
+                }
+            }
+        }
+        if !done {
+            println!("0");
+        } else {
+            println!("{}", _path_to_terms[vv]);
+        }
+    }
+}
+
+fn _d_paths(_vec: &[SuffixNode], _p: &mut [Us], s: Us) {
+    for (&_, &v) in _vec[s]._next.iter() {
+        if _p[v] == 0 {
+            _d_paths(_vec, _p, v);
+        }
+        _p[s] += _p[v];
+    }
+    if s != 0 {
+        _p[s] += 1;
+    }
+}
+
+fn _distinct_substrings() {
+    let ss = &_read::<String>()[0];
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(ss.len() * 2);
+    _vec.push(SuffixNode::default());
+    _build_suffix_automata(ss, &mut _vec);
+    // XXX: Get all edges to the last node
+    let mut _paths = vec![0; _vec.len()];
+    _d_paths(&_vec, &mut _paths, 0);
+    println!("{}", _paths[0]);
+}
+
+fn _longest_path_to_term(_v: &[SuffixNode], _paths: &mut [Us], s: Us) {
+    let mut tp = _paths[s];
+    for (&_, &v) in _v[s]._next.iter() {
+        if _paths[v] == 0 {
+            _longest_path_to_term(_v, _paths, v);
+        }
+        tp = max(1 + _paths[v], _paths[s]);
+    }
+    _paths[s] = tp;
+}
+
+fn _pattern_position() {
+    let ss = &_read::<String>()[0];
+    let n = _read::<Us>()[0];
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(ss.len() * 2);
+    _vec.push(SuffixNode::default());
+    _build_suffix_automata(ss, &mut _vec);
+    let mut _paths = vec![0; _vec.len()];
+    _longest_path_to_term(&_vec, &mut _paths, 0);
+    println!();
+    for _ in 0..n {
+        let mut counter = 0usize;
+        let mut vv = 0usize;
+        let o = &_read::<String>()[0]; //The pattern
+        let mut done = true;
+        for c in o.chars() {
+            match _vec[vv]._next.get(&c) {
+                Some(&x) => {
+                    vv = x;
+                    counter += 1;
+                }
+                None => {
+                    done = false;
+                    break;
+                }
+            }
+        }
+        if !done {
+            println!("-1");
+        } else {
+            println!("{}", ss.len() - _paths[vv] - counter + 1);
+        }
+    }
+}
+
+fn _palindrome_query() {
+    let _ns = _read::<Us>();
+    let _ss = &mut _read::<String>()[0];
+    // XXX: Read the queries
+    for _ in 0.._ns[1] {
+        let q: Vec<String> = _read::<String>();
+        let qq: Us = q[0].parse().unwrap();
+        match qq {
+            2 => {
+                let i: Us = q[1].parse().unwrap();
+                let j: Us = q[2].parse().unwrap();
+                _is_palindrome(&_ss[i - 1..j]);
+            }
+            1 => {
+                let i = q[1].parse::<Us>().unwrap();
+                let v: char = q[2].parse().unwrap();
+                unsafe {
+                    let vv = _ss.as_mut_vec();
+                    vv[i - 1] = v as u8;
+                }
+            }
+            _ => (),
+        }
+    }
+    fn _is_palindrome(s: &str) {
+        let mut done = true;
+        let mut cc = 0;
+        for (c1, c2) in zip(s.chars(), s.chars().rev()) {
+            if c1 != c2 {
+                done = false;
+                break;
+            }
+            if cc == s.len() / 2 {
+                break;
+            }
+            cc += 1;
+        }
+        if done {
+            println!("YES");
+        } else {
+            println!("NO");
+        }
+    }
+}
+
+fn _substr_dist() {
+    let _ss = &_read::<String>()[0];
+    let mut _vec: Vec<SuffixNode> = Vec::with_capacity(_ss.len() * 2);
+    _vec.push(SuffixNode::default());
+    _build_suffix_automata(&_ss, &mut _vec);
+    let mut freq = vec![0usize; _ss.len() + 1];
+    // XXX: Now just get the distribution of each substring
+    fn _freq_dis(v: &[SuffixNode], _f: &mut [Us], c: Us, i: Us) {
+        if c > 0 {
+            _f[c] += 1;
+        }
+        for (&_, &vv) in v[i]._next.iter() {
+            _freq_dis(v, _f, c + 1, vv);
+        }
+    }
+    _freq_dis(&_vec, &mut freq, 0, 0);
+    freq[1..].iter().for_each(|&x| print!("{} ", x));
+    println!();
 }
 
 fn main() {
@@ -1233,5 +1439,11 @@ fn main() {
     // _poly_queries();
 
     // XXX: String processing
-    _string_matching();
+    // _string_matching(); // Number of repetitions of a pattern in a string
+    // _find_patterns(); // Just find if the patterns exist in the suffix automata
+    // _counting_patterns(); // Find the patterns, and count how many times
+    // _distinct_substrings(); // The total number of distinct substrings
+    // _pattern_position(); //Get the first "position" of each pattern
+    // _palindrome_query(); //Check if a substring is a palindrome
+    // _substr_dist(); //distribution of substrings in a string
 }
