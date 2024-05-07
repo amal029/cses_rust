@@ -1,7 +1,7 @@
 // XXX: This file does many algorithms from CSES website.
 // Website: https://cses.fi/problemset/list/
 
-use std::cmp::{max, Reverse};
+use std::cmp::{max, min, Reverse};
 use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::iter::zip;
 use std::process::exit;
@@ -1409,6 +1409,29 @@ fn _substr_dist() {
     println!();
 }
 
+fn _hamming_distance() {
+    let ss = _read::<Us>();
+    let mut _vv: Vec<Us> = vec![0; ss[0]];
+    for i in 0..ss[0] {
+        let _m = &_read::<String>()[0];
+        _vv[i] = Us::from_str_radix(_m, 2).unwrap();
+    }
+    // XXX: Now do hamming distance
+    let mut res: Us = MAX;
+    for (_c, &_i) in _vv.iter().enumerate() {
+        for &_j in _vv[_c + 1..].iter() {
+            let _y = _i ^ _j;
+            res = min(res, _y.count_ones() as usize);
+        }
+    }
+    println!("{res}");
+}
+
+// TODO: This is the hungarian algorithm
+fn _task_assignment() {
+
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1446,4 +1469,8 @@ fn main() {
     // _pattern_position(); //Get the first "position" of each pattern
     // _palindrome_query(); //Check if a substring is a palindrome
     // _substr_dist(); //distribution of substrings in a string
+
+    // XXX: Advanced algorithms
+    // _hamming_distance(); // converting binary to decimal, popcount assmebly inst
+    // _task_assignment(); //This is the NxN task assignment problem -- hungarian algo
 }
