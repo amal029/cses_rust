@@ -649,7 +649,7 @@ fn _g_match(m: &[Vec<Us>], cols: &mut [i64], tom: Us, row: Us, col: Us) -> bool 
     let cc = m[row]
         .iter()
         .enumerate()
-        .filter(|&(t, x)| *x == tom && t >= col)
+        .filter(|(t, &x)| x == tom && *t >= col)
         .map(|(t, &_)| t)
         .collect::<Vec<usize>>();
     let mut done = false;
@@ -673,12 +673,12 @@ fn _g_match(m: &[Vec<Us>], cols: &mut [i64], tom: Us, row: Us, col: Us) -> bool 
     }
     if !done {
         // XXX: Now re-assign a previous col if you can
-        for _j in cc.iter() {
+        for &_j in cc.iter() {
             // XXX: Try moving one by one if possible
-            done = _g_match(m, cols, tom, cols[*_j] as usize, *_j + 1);
+            done = _g_match(m, cols, tom, cols[_j] as usize, _j + 1);
             if done {
                 // XXX: Add yourself to the cols
-                cols[*_j] = row as i64;
+                cols[_j] = row as i64;
                 break;
             }
         }
@@ -1429,7 +1429,127 @@ fn _hamming_distance() {
 
 // TODO: This is the hungarian algorithm
 fn _task_assignment() {
+    let n = _read::<Us>()[0];
+    let mut t: Vec<Vec<Us>> = vec![vec![0; n]; n];
+    for i in 0..n {
+        let ss = _read::<Us>();
+        t[i] = ss; //this is a move operation, not copy
+    }
+    let _orig = t.clone(); // just kept for later
 
+    // XXX: Now sub the min for each row first and then column.
+    // XXX: Row subtraction
+    for i in 0..n {
+        let &m = t[i].iter().min().unwrap();
+        t[i] = t[i].iter().map(|x| x - m).collect::<Vec<_>>();
+    }
+
+    // XXX: Column subtraction -- this code sucks!
+    for j in 0..n {
+        let mut m = MAX;
+        for i in 0..n {
+            m = min(t[i][j], m);
+        }
+        // XXX: Now subtract the minimum
+        for i in 0..n {
+            t[i][j] -= m;
+        }
+    }
+    let mut cols = vec![-1i64; n];
+    for i in 0..n {
+        _g_match(&t, &mut cols, 0, i, 0);
+    }
+    while cols.iter().any(|&x| x == -1) {
+        // XXX: Then we have to do more work
+
+        // XXX: The unassigned rows
+        let _urows = (0..n)
+            .filter(|&x| !cols.iter().any(|&y| x == y as Us))
+            .collect::<Vec<_>>();
+        // XXX: The minimum delta
+        let mut _d = MAX;
+        // XXX: The rows that have been assigned to these columns
+        let mut _ras: Vec<Us> = Vec::with_capacity(n);
+        for &j in _urows.iter() {
+            _ras.clear();
+            // XXX: Get the zeros columns
+            let _zc = t[j]
+                .iter()
+                .enumerate()
+                .filter(|(_, &x)| x == 0)
+                .map(|(t, &_)| t)
+                .collect::<Vec<_>>();
+
+            for &k in _zc.iter() {
+                let _ra = cols[k];
+                assert!(_ra != -1);
+                _ras.push(_ra as Us);
+                // XXX: The the minimum from amongst all rows that are
+                // not in _zc.
+                let &_d1 = t[j].iter().filter(|&&x| x != 0).min().unwrap();
+                let &_d2 = t[_ra as Us].iter().filter(|&&x| x != 0).min().unwrap();
+                _d = min(_d1, _d2);
+            }
+            assert!(_d != 0);
+            _ras.push(j); // just making it easy to iterate
+
+            // XXX: Now do the pivot for simplex
+            for &h in &_ras {
+                for l in 0..n {
+                    if t[h][l] > 0 {
+                        t[h][l] -= _d;
+                    }
+                }
+            }
+            for &h in &cols {
+                if h != -1 {
+                    for &l in &_zc {
+                        if t[h as Us][l] > 0 {
+                            t[h as Us][l] += _d;
+                        }
+                    }
+                }
+            }
+        }
+        // XXX: Now carry out the greedy match again
+        cols.fill(-1);
+        for i in 0..n {
+            _g_match(&t, &mut cols, 0, i, 0);
+        }
+    }
+    // XXX: We are done
+    let mut total = 0;
+    for i in 0..n {
+        total += _orig[cols[i] as Us][i];
+    }
+    println!("{total}");
+    for i in 0..n {
+        println!("{} {}", cols[i] + 1, i + 1);
+    }
+}
+
+fn _new_road_qs() {
+    let ss = _read::<Us>();
+    let mut map = (1..ss[0] + 1).map(|x| (x, 0)).collect::<HashMap<Us, Us>>();
+    for i in 0..ss[1] {
+        let mm = _read::<Us>();
+        if map[&mm[0]] == 0 {
+            *map.get_mut(&mm[0]).unwrap() = i + 1;
+        }
+        if map[&mm[1]] == 0 {
+            *map.get_mut(&mm[1]).unwrap() = i + 1;
+        }
+    }
+    println!();
+    // XXX: Now the queries
+    for _ in 0..ss[2] {
+        let mm = _read::<Us>();
+        if map[&mm[0]] == 0 || map[&mm[1]] == 0 {
+            println!("-1");
+        } else {
+            println!("{}", max(map[&mm[0]], map[&mm[1]]));
+        }
+    }
 }
 
 fn main() {
@@ -1471,6 +1591,7 @@ fn main() {
     // _substr_dist(); //distribution of substrings in a string
 
     // XXX: Advanced algorithms
-    // _hamming_distance(); // converting binary to decimal, popcount assmebly inst
+    // _hamming_distance(); // converting binary to decimal, popcount assembly inst
+    // _new_road_qs(); // disjoint union of sets using hashmap
     // _task_assignment(); //This is the NxN task assignment problem -- hungarian algo
 }
