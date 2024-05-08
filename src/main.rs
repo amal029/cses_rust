@@ -1427,7 +1427,7 @@ fn _hamming_distance() {
     println!("{res}");
 }
 
-// TODO: This is the hungarian algorithm
+// XXX: This is the Hungarian Algorithm.
 fn _task_assignment() {
     let n = _read::<Us>()[0];
     let mut t: Vec<Vec<Us>> = vec![vec![0; n]; n];
@@ -1552,6 +1552,15 @@ fn _new_road_qs() {
     }
 }
 
+fn _exponent() {
+    let n = _read::<Us>()[0];
+    let y = 10usize.pow(9) + 7;
+    for _ in 0..n {
+        let ss = _read::<Us>();
+        println!("{}", (0..ss[1]).fold(1, |acc, _| acc * ss[0]) % y);
+    }
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1594,4 +1603,7 @@ fn main() {
     // _hamming_distance(); // converting binary to decimal, popcount assembly inst
     // _new_road_qs(); // disjoint union of sets using hashmap
     // _task_assignment(); //This is the NxN task assignment problem -- hungarian algo
+
+    // XXX: Mathematics
+    // _exponent();
 }
