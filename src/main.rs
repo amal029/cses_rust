@@ -711,7 +711,13 @@ fn _school_dance() {
     });
 }
 
-fn _bfs_max_flow(s: usize, t: usize, ps: &mut [usize], adj: &[Vec<usize>], cap: &[Vec<i8>]) -> i8 {
+fn _bfs_max_flow(
+    s: usize,
+    t: usize,
+    ps: &mut [usize],
+    adj: &[Vec<usize>],
+    cap: &[Vec<i64>],
+) -> i64 {
     // XXX: Make a queue
     ps.fill(MAX);
     ps[s] = MAX - 1; //just to be different
@@ -733,14 +739,14 @@ fn _bfs_max_flow(s: usize, t: usize, ps: &mut [usize], adj: &[Vec<usize>], cap: 
             }
         }
     }
-    flow as i8
+    flow as i64
 }
 
 fn _police_chase() {
-    const VAL: i8 = 1i8;
+    const VAL: i64 = 1;
     let ss = _read::<usize>();
     let mut adj: Vec<Vec<usize>> = vec![vec![]; ss[0]];
-    let mut cap: Vec<Vec<i8>> = vec![vec![-1; ss[0]]; ss[0]];
+    let mut cap: Vec<Vec<i64>> = vec![vec![-1; ss[0]]; ss[0]];
     for _ in 0..ss[1] {
         let s = _read::<usize>();
         adj[s[0] - 1].push(s[1] - 1);
@@ -750,7 +756,7 @@ fn _police_chase() {
     }
 
     // XXX: Now just do ford-fulkerson algorithm
-    let mut flow: i8;
+    let mut flow: i64;
     let mut parents: Vec<usize> = vec![MAX; ss[0]];
     loop {
         flow = _bfs_max_flow(0, ss[0] - 1, &mut parents, &adj, &cap);
@@ -770,7 +776,7 @@ fn _police_chase() {
     // XXX: Now just get the s-t cut
     fn dfs_st(
         adj: &[Vec<usize>],
-        cap: &[Vec<i8>],
+        cap: &[Vec<i64>],
         s: usize,
         res: &mut Vec<usize>,
         vis: &mut [bool],
@@ -1523,8 +1529,8 @@ fn _task_assignment() {
         total += _orig[cols[i] as Us][i];
     }
     println!("{total}");
-    for i in 0..n {
-        println!("{} {}", cols[i] + 1, i + 1);
+    for (i, &x) in cols.iter().enumerate().take(n) {
+        println!("{} {}", x + 1, i + 1);
     }
 }
 
@@ -1554,10 +1560,152 @@ fn _new_road_qs() {
 
 fn _exponent() {
     let n = _read::<Us>()[0];
-    let y = 10usize.pow(9) + 7;
+    let _y = 10usize.pow(9) + 7;
     for _ in 0..n {
         let ss = _read::<Us>();
-        println!("{}", (0..ss[1]).fold(1, |acc, _| acc * ss[0]) % y);
+        println!("{}", (0..ss[1]).fold(1, |acc, _| acc * ss[0]) % _y);
+    }
+}
+
+fn _fib() {
+    let _ss = _read::<Us>()[0];
+    if _ss <= 3 {
+        println!("2");
+    } else {
+        let _y = 10usize.pow(9) + 7;
+        let mut _oo = 1usize; // for fib(2)
+        let mut _o = 2usize; // for fib(3)
+        for _ in 3.._ss {
+            let u = _o + _oo;
+            _oo = _o;
+            _o = u;
+        }
+        println!("{}", _o % _y);
+    }
+}
+
+fn _fib_golden_ratio() {
+    let n = _read::<Us>()[0];
+    let phi = (1f64 + 5f64.sqrt()) / 2f64;
+    let si = (1f64 - 5f64.sqrt()) / 2f64;
+    let phi_p = phi.powi(n as i32);
+    let si_p = si.powi(n as i32);
+    let res = ((phi_p - si_p) / (phi - si)).ceil() as Us;
+    let _y = 10usize.pow(9) + 7;
+    println!("{}", res % _y);
+}
+
+fn _transport_assignment() {
+    let ss = _read::<Us>();
+    let mut costs = vec![vec![MAX; ss[0]]; ss[0]];
+    let s = ss[0];
+    let t = s + 1;
+    let mut cap = vec![vec![-1i64; ss[0] + 2]; ss[0] + 2];
+    for _ in 0..ss[1] {
+        // XXX: Update the costs and capacity matrix
+        let m = _read::<Us>();
+        let ss = m[0] - 1;
+        let tt = m[1] - 1;
+        let ca = m[2];
+        let co = m[3];
+        costs[ss][tt] = co;
+        costs[tt][ss] = co;
+        cap[ss][tt] = ca as i64;
+        cap[tt][ss] = 0;
+    }
+    let _orig = costs.clone(); // needed for final cost calculation
+    let _ocap = cap.clone(); // needed for final calculation
+
+    // XXX: Add the capacity for source and target
+    cap[s][0] = ss[2] as i64;
+    cap[0][s] = 0;
+    cap[ss[0] - 1][t] = ss[2] as i64;
+    cap[t][ss[0] - 1] = 0;
+    // println!("costs: {:?}", costs);
+    // println!("capacity: {:?}", cap);
+
+    // XXX: Now subtract the min cost for each row
+    for i in 0..ss[0] {
+        let mm = *costs[i].iter().min().unwrap();
+        costs[i] = costs[i].iter().map(|&x| x - mm).collect::<Vec<_>>();
+    }
+    // XXX: Subtract costs for min column
+    for j in 0..ss[0] {
+        let mut mm = MAX;
+        for i in 0..ss[0] {
+            mm = min(mm, costs[i][j]);
+        }
+        for i in 0..ss[0] {
+            costs[i][j] -= mm;
+        }
+    }
+    // println!("costs: {:?}", costs);
+    // println!("capacity: {:?}", cap);
+
+    // XXX: Make the adj list for the 0 cost edges
+    fn add_to_adj(adj: &mut [Vec<Us>], s: Us, t: Us, ss: &[Us], costs: &[Vec<Us>]) {
+        for i in 0..ss[0] {
+            adj[i] = costs[i]
+                .iter()
+                .enumerate()
+                .filter(|(_, &x)| x == 0)
+                .map(|(t, &_)| t)
+                .collect::<Vec<_>>();
+        }
+        // XXX: Add the source and target nodes too
+        adj[s].push(0);
+        adj[0].push(s);
+        adj[ss[0] - 1].push(t);
+        adj[t].push(ss[0] - 1);
+    }
+    // println!("{:?}", adj);
+
+    let mut parents = vec![MAX; ss[0] + 2];
+    // XXX: Do max-flow on the adj graph
+
+    let mut adj: Vec<Vec<Us>> = vec![vec![]; ss[0] + 2];
+    let mut flow: i64;
+    let mut tflow: i64 = 0;
+    loop {
+        adj.iter_mut().for_each(|x| x.clear());
+        add_to_adj(&mut adj, s, t, &ss, &costs);
+        flow = _bfs_max_flow(s, t, &mut parents, &adj, &cap);
+        tflow += flow;
+        if flow == 0 {
+            break;
+        }
+        // XXX: Update the capacity matrix
+        let mut c: usize = t;
+        let mut p: usize = parents[c];
+        while p != (MAX - 1) {
+            cap[p][c] -= flow;
+            cap[c][p] += flow;
+            c = p;
+            p = parents[c];
+        }
+        // XXX: Add other edges not present in the graph
+        let mm = *costs[ss[0] - 1].iter().filter(|&&x| x > 0).min().unwrap();
+        costs[ss[0] - 1] = costs[ss[0] - 1]
+            .iter()
+            .map(|&x| if x == 0 { x } else { x - mm })
+            .collect::<Vec<_>>();
+        // XXX: Do the same for the column [t]
+        for j in 0..ss[0] {
+            if costs[j][ss[0] - 1] > 0 {
+                costs[j][ss[0] - 1] -= mm;
+            }
+        }
+    }
+    if tflow != ss[2] as i64 {
+        println!("-1");
+    } else {
+        let mut total_cost = 0i64;
+        for i in 0..ss[0] {
+            for j in (i + 1)..ss[0] {
+                total_cost += (_ocap[i][j] - cap[i][j]) * (_orig[i][j] as i64);
+            }
+        }
+        println!("{:?}", total_cost);
     }
 }
 
@@ -1603,7 +1751,10 @@ fn main() {
     // _hamming_distance(); // converting binary to decimal, popcount assembly inst
     // _new_road_qs(); // disjoint union of sets using hashmap
     // _task_assignment(); //This is the NxN task assignment problem -- hungarian algo
+    // _transport_assignment(); // This is a optimal transportation problem
 
     // XXX: Mathematics
     // _exponent();
+    // _fib(); // with dynamic programming
+    // _fib_golden_ratio(); //Fibonacci formula using golden ratio
 }
