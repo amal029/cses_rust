@@ -820,7 +820,7 @@ where
     _ui: Us,
 }
 
-// XXX: f2 is the base case function. f1 is the merge case function
+// XXX: f1 is the base case function. f2 is the merge case function
 fn _build_seg_tree<F1, F2, T, U>(
     o: &[U],
     _stree: &mut [SegNode<T>],
