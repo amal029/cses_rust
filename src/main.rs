@@ -1765,10 +1765,10 @@ fn _heap_sort() {
 }
 
 fn _quick_sort() {
-    let _ss = _read::<Us>();
+    let mut _ss = _read::<Us>();
     fn _partition<T>(a: &mut [T], _e: Us, _i: Us)
     where
-        T: Copy + PartialOrd,
+        T: Copy + PartialOrd + std::fmt::Debug,
     {
         let mut _pp = _e - 1;
         let mut j = _i;
@@ -1789,7 +1789,10 @@ fn _quick_sort() {
             }
             j += 1;
         }
+	println!("{:?}", a);
     }
+    let n = _ss.len();
+    _partition(&mut _ss, n, 0);
 }
 
 fn main() {
