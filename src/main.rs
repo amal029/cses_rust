@@ -1764,6 +1764,34 @@ fn _heap_sort() {
     println!("{:?}", _ss);
 }
 
+fn _quick_sort() {
+    let _ss = _read::<Us>();
+    fn _partition<T>(a: &mut [T], _e: Us, _i: Us)
+    where
+        T: Copy + PartialOrd,
+    {
+        let mut _pp = _e - 1;
+        let mut j = _i;
+        while j < _e {
+            if j <= _pp && a[j] >= a[_pp] {
+                // XXX: Then swap
+                let temp: T = a[j];
+                a[j] = a[_pp];
+                a[_pp] = temp;
+                _pp = j;
+            } else if j > _pp && a[j] <= a[_pp] {
+                let temp = a[j];
+                a[j] = a[_pp];
+                a[_pp] = temp;
+                let op = _pp;
+                _pp = j;
+                j = op;
+            }
+            j += 1;
+        }
+    }
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1814,5 +1842,6 @@ fn main() {
     // _fib_golden_ratio(); //Fibonacci formula using golden ratio
 
     // XXX: Sorting algorithms in rust
-    _heap_sort();
+    // _heap_sort();
+    _quick_sort();
 }
