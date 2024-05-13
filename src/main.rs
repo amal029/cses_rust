@@ -1709,6 +1709,61 @@ fn _transport_assignment() {
     }
 }
 
+fn _heapify<T, F>(a: &mut [T], _n: Us, l: Us, f: &F)
+where
+    T: Copy + std::fmt::Debug,
+    F: for<'a> Fn(&'a T, &'a T) -> bool,
+{
+    // XXX: First get the element that satisfies the function f
+    let mut largest = l;
+    // XXX: You need the extra < n, because we are doing place swaps
+    largest = if f(&a[l * 2 + 1], &a[largest]) && (l * 2 + 1) < _n {
+        l * 2 + 1
+    } else {
+        largest
+    };
+    largest = if f(&a[l * 2 + 2], &a[largest]) && (l * 2 + 2) < _n {
+        l * 2 + 2
+    } else {
+        largest
+    };
+    // XXX: Got the largest value amongst the subtree
+    if largest != l {
+        let temp = a[l];
+        a[l] = a[largest];
+        a[largest] = temp;
+    }
+
+    // XXX: Now heapify the subtree from largest
+    if largest * 2 + 1 < _n && largest != l {
+        _heapify(a, _n, largest, f);
+    }
+}
+
+fn _heap_sort() {
+    let mut _ss = _read::<i64>();
+    let _n: i64 = _ss.len() as i64 - 1;
+    // XXX: Sort this given vector (ss)
+    let f = |x: &i64, y: &i64| x >= y;
+    let mut j: i64 = if _n % 2 == 0 {
+        (_n - 2) / 2
+    } else {
+        (_n - 1) / 2
+    };
+    while j >= 0 {
+        _heapify(&mut _ss, (_n + 1) as Us, j as Us, &f);
+        j -= 1;
+    }
+    // XXX: Now sort them
+    for i in (0.._n + 1).rev() {
+        let temp = _ss[i as Us];
+        _ss[i as Us] = _ss[0];
+        _ss[0] = temp;
+        _heapify(&mut _ss, i as Us, 0, &f);
+    }
+    println!("{:?}", _ss);
+}
+
 fn main() {
     // XXX: Beginner problems
     // _weird_algo();
@@ -1757,4 +1812,7 @@ fn main() {
     // _exponent();
     // _fib(); // with dynamic programming
     // _fib_golden_ratio(); //Fibonacci formula using golden ratio
+
+    // XXX: Sorting algorithms in rust
+    _heap_sort();
 }
