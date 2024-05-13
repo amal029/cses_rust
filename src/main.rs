@@ -1712,27 +1712,29 @@ fn _transport_assignment() {
 
 fn _heapify<T, F>(a: &mut [T], _n: Us, l: Us, f: &F)
 where
-    T: Copy + std::fmt::Debug,
+    T: std::fmt::Debug,
     F: for<'a> Fn(&'a T, &'a T) -> bool,
 {
     // XXX: First get the element that satisfies the function f
     let mut largest = l;
     // XXX: You need the extra < n, because we are doing place swaps
-    largest = if f(&a[l * 2 + 1], &a[largest]) && (l * 2 + 1) < _n {
+    largest = if (l * 2 + 1) < _n && f(&a[l * 2 + 1], &a[largest]) {
         l * 2 + 1
     } else {
         largest
     };
-    largest = if f(&a[l * 2 + 2], &a[largest]) && (l * 2 + 2) < _n {
+    largest = if (l * 2 + 2) < _n && f(&a[l * 2 + 2], &a[largest]) {
         l * 2 + 2
     } else {
         largest
     };
     // XXX: Got the largest value amongst the subtree
     if largest != l {
-        let temp = a[l];
-        a[l] = a[largest];
-        a[largest] = temp;
+        let a_ptr = a.as_mut_ptr();
+        unsafe {
+            let (x, y) = (a_ptr.add(l), a_ptr.add(largest));
+            swap(x, y);
+        }
     }
 
     // XXX: Now heapify the subtree from largest
@@ -1769,7 +1771,7 @@ fn _quick_sort() {
     let mut _ss = _read::<Us>();
     fn _partition<T>(a: &mut [T], _e: Us, _i: Us)
     where
-        T: Copy + PartialOrd + std::fmt::Debug,
+        T: PartialOrd + std::fmt::Debug,
     {
         if _e - _i <= 0 {
             return;
@@ -1854,6 +1856,6 @@ fn main() {
     // _fib_golden_ratio(); //Fibonacci formula using golden ratio
 
     // XXX: Sorting algorithms in rust
-    // _heap_sort();
+    _heap_sort();
     // _quick_sort();
 }
