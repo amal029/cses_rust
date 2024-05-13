@@ -1770,6 +1770,9 @@ fn _quick_sort() {
     where
         T: Copy + PartialOrd + std::fmt::Debug,
     {
+        if _e - _i <= 0 {
+            return;
+        }
         let mut _pp = _e - 1;
         let mut j = _i;
         while j < _e {
@@ -1789,10 +1792,12 @@ fn _quick_sort() {
             }
             j += 1;
         }
-	println!("{:?}", a);
+        _partition(a, _pp, _i);
+        _partition(a, _e, _pp+1);
     }
     let n = _ss.len();
     _partition(&mut _ss, n, 0);
+    println!("{:?}", _ss);
 }
 
 fn main() {
