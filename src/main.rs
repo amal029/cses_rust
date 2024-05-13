@@ -5,6 +5,7 @@ use std::cmp::{max, min, Reverse};
 use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::iter::zip;
 use std::process::exit;
+use std::ptr::swap;
 use std::usize::MAX;
 
 type Us = usize;
@@ -1778,14 +1779,17 @@ fn _quick_sort() {
         while j < _e {
             if j <= _pp && a[j] >= a[_pp] {
                 // XXX: Then swap
-                let temp: T = a[j];
-                a[j] = a[_pp];
-                a[_pp] = temp;
-                _pp = j;
+                let a_ptr = a.as_mut_ptr();
+                unsafe {
+                    let (x, y) = ((a_ptr.add(j)), (a_ptr.add(_pp)));
+                    swap(x, y);
+                }
             } else if j > _pp && a[j] <= a[_pp] {
-                let temp = a[j];
-                a[j] = a[_pp];
-                a[_pp] = temp;
+                let a_ptr = a.as_mut_ptr();
+                unsafe {
+                    let (x, y) = ((a_ptr.add(j)), (a_ptr.add(_pp)));
+                    swap(x, y);
+                }
                 let op = _pp;
                 _pp = j;
                 j = op;
@@ -1793,7 +1797,7 @@ fn _quick_sort() {
             j += 1;
         }
         _partition(a, _pp, _i);
-        _partition(a, _e, _pp+1);
+        _partition(a, _e, _pp + 1);
     }
     let n = _ss.len();
     _partition(&mut _ss, n, 0);
@@ -1851,5 +1855,5 @@ fn main() {
 
     // XXX: Sorting algorithms in rust
     // _heap_sort();
-    _quick_sort();
+    // _quick_sort();
 }
